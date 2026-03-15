@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>ULTRA GOD MODE AI PANEL</title>
+
+<style>
+
+body{
+background:black;
+color:white;
+font-family:Arial;
+margin:0;
+}
+
+.container{
+width:92%;
+margin:auto;
+margin-top:25px;
+}
+
+.title{
+text-align:center;
+font-size:22px;
+letter-spacing:3px;
+margin-bottom:25px;
+}
+
+.timer{
+font-size:28px;
+background:#22d3ee;
+width:90px;
+height:90px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+margin:auto;
+}
+
+.row{
+margin-top:8px;
+font-size:18px;
+}
+
+.label{
+display:inline-block;
+width:160px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+border:1px solid #777;
+padding:10px;
+}
+
+.download{
+width:100%;
+padding:15px;
+background:#2bb7df;
+border:none;
+border-radius:25px;
+color:white;
+font-size:18px;
+margin-top:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="title">ULTRA GOD MODE AI PANEL</div>
+
+<div class="timer" id="timer">30</div>
+
+<h2>NEXT SIGNAL</h2>
+
+<div class="row">
+<span class="label">AI Confidence :</span>
+<span id="confidence">0%</span>
+</div>
+
+<div class="row">
+<span class="label">BIG SMALL :</span>
+<span id="signal">-</span>
+</div>
+
+<div class="row">
+<span class="label">NUMBER :</span>
+<span id="num">-</span>
+</div>
+
+<div class="row">
+<span class="label">COLOR :</span>
+<span id="color">-</span>
+</div>
+
+<h2>SIGNAL HISTORY</h2>
+
+<table>
+
+<tr>
+<td>Total Signal</td>
+<td id="totalsignal">0</td>
+</tr>
+
+<tr>
+<td>Total Win</td>
+<td id="win">0</td>
+</tr>
+
+<tr>
+<td>Total Loss</td>
+<td id="loss">0</td>
+</tr>
+
+</table>
+
+<h2>GAME HISTORY</h2>
+
+<table id="history">
+
+<tr>
+<th>Period</th>
+<th>Number</th>
+<th>Big/Small</th>
+<th>Color</th>
+</tr>
+
+</table>
+
+<button class="download" onclick="downloadHistory()">
+All Game History Download
+</button>
+
+</div>
+
+<script>
+
+async function loadSignal(){
+
+const res=await fetch("/signal");
+const data=await res.json();
+
+document.getElementById("signal").innerText=data.signal.size;
+document.getElementById("num").innerText=data.signal.number;
+document.getElementById("color").innerText=data.signal.color;
+document.getElementById("confidence").innerText=data.signal.confidence+"%";
+
+document.getElementById("totalsignal").innerText=data.totalSignal;
+document.getElementById("win").innerText=data.win;
+document.getElementById("loss").innerText=data.loss;
+
+}
+
+async function loadHistory(){
+
+const res=await fetch("/history");
+const data=await res.json();
+
+let table=document.getElementById("history");
+
+table.innerHTML=`
+<tr>
+<th>Period</th>
+<th>Number</th>
+<th>Big/Small</th>
+<th>Color</th>
+</tr>
+`;
+
+data.forEach(r=>{
+
+table.innerHTML+=`
+<tr>
+<td>${r.period}</td>
+<td>${r.number}</td>
+<td>${r.size}</td>
+<td>${r.color}</td>
+</tr>
+`;
+
+});
+
+}
+
+function downloadHistory(){
+window.open("/download");
+}
+
+setInterval(loadSignal,5000);
+setInterval(loadHistory,5000);
+
+let t=30;
+
+setInterval(()=>{
+
+t--;
+
+if(t<=0) t=30;
+
+document.getElementById("timer").innerText=t;
+
+},1000);
+
+</script>
+
+</body>
+</html>
