@@ -1,151 +1,64 @@
-<!DOCTYPE html><html>
-<head>
+<!DOCTYPE html><html><head>
 <meta charset="UTF-8">
 <title>ULTRA GOD MODE AI PANEL</title><style>
-
-body{
-background:black;
-color:white;
-font-family:Arial;
-margin:0;
-}
-
-.container{
-width:92%;
-margin:auto;
-margin-top:25px;
-}
-
-.title{
-text-align:center;
-font-size:22px;
-letter-spacing:3px;
-margin-bottom:25px;
-}
-
-.top{
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-
-.game{
-font-size:28px;
-font-weight:bold;
-}
-
-.period{
-margin-top:6px;
-color:#ccc;
-}
+body{background:black;color:white;font-family:Arial;margin:0;}
+.container{width:92%;margin:auto;margin-top:25px;}
+.title{text-align:center;font-size:22px;letter-spacing:3px;margin-bottom:25px;}
+.top{display:flex;justify-content:space-between;align-items:center;}
+.game{font-size:28px;font-weight:bold;}
+.period{margin-top:6px;color:#ccc;}
 
 .timerRing{
-width:90px;
-height:90px;
-border-radius:50%;
+width:90px;height:90px;border-radius:50%;
 background:conic-gradient(#22d3ee calc(var(--p)*1%),#1f2937 0);
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:28px;
-font-weight:bold;
-color:white;
+display:flex;align-items:center;justify-content:center;
+font-size:28px;font-weight:bold;color:white;
 }
 
-.signal{
-margin-top:35px;
-}
+.signal{margin-top:35px;}
+.row{margin-top:8px;font-size:18px;}
+.label{display:inline-block;width:160px;}
 
-.row{
-margin-top:8px;
-font-size:18px;
-}
-
-.label{
-display:inline-block;
-width:160px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-margin-top:20px;
-}
-
-th,td{
-border:1px solid #777;
-padding:10px;
-text-align:left;
-}
-
-th{
-background:#111;
-}
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+th,td{border:1px solid #777;padding:10px;text-align:left;}
+th{background:#111;}
 
 .downloadbtn{
-width:100%;
-padding:15px;
-background:#2bb7df;
-border:none;
-border-radius:25px;
-color:white;
-font-size:18px;
-margin-top:20px;
+width:100%;padding:15px;background:#2bb7df;border:none;
+border-radius:25px;color:white;font-size:18px;margin-top:20px;
 }
-
-</style></head><body><div class="container"><div class="title">
-ULTRA GOD MODE AI PANEL
-</div><div class="top"><div><div class="game">
-WinGo 30sec
-</div><div class="period">
-Next Period :- <span id="period">-</span>
-</div></div><div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px">Time :-</div><div class="timerRing" id="timerRing">
+</style></head><body><div class="container"><div class="title">ULTRA GOD MODE AI PANEL</div><div class="top">
+<div>
+<div class="game">WinGo 30sec</div>
+<div class="period">Next Period :- <span id="period">-</span></div>
+</div><div style="display:flex;align-items:center;gap:10px">
+<div style="font-size:22px">Time :-</div>
+<div class="timerRing" id="timerRing">
 <span id="timer">30</span>
-</div></div></div><div class="signal"><h2>NEXT SIGNAL</h2><div class="row">
-<span class="label">AI Confidence :</span>
-<span id="confidence">0%</span>
-</div><div class="row">
-<span class="label">BIG SMALL :</span>
-<span id="signal">-</span>
-</div><div class="row">
-<span class="label">NUMBER :</span>
-<span id="num">-</span>
-</div><div class="row">
-<span class="label">COLOR :</span>
-<span id="color">-</span>
-</div><div class="row">
-<span class="label">Signal Result :</span>
-<span id="signalresult">-</span>
-</div></div><h2>SIGNAL HISTORY</h2><table><tr>
-<td>Big/Small Total Signal</td>
-<td id="totalsignal">0</td>
-</tr><tr>
-<td>Big/Small Total Win</td>
-<td id="win">0</td>
-</tr><tr>
-<td>Big/Small Total Loss</td>
-<td id="loss">0</td>
-</tr><tr>
-<td>Win Streak</td>
-<td id="winstreak">0</td>
-</tr><tr>
-<td>Loss Streak</td>
-<td id="lossstreak">0</td>
-</tr><tr>
-<td>Max Win Streak</td>
-<td id="maxwinstreak">0</td>
-</tr><tr>
-<td>Max Loss Streak</td>
-<td id="maxlossstreak">0</td>
-</tr><tr>
-<td>Accuracy %</td>
-<td id="accuracy">0%</td>
-</tr></table><h2>GAME HISTORY</h2><table id="history"><tr>
+</div>
+</div>
+</div><div class="signal">
+<h2>NEXT SIGNAL</h2><div class="row"><span class="label">AI Confidence :</span><span id="confidence">0%</span></div>
+<div class="row"><span class="label">BIG SMALL :</span><span id="signal">-</span></div>
+<div class="row"><span class="label">NUMBER :</span><span id="num">-</span></div>
+<div class="row"><span class="label">COLOR :</span><span id="color">-</span></div>
+<div class="row"><span class="label">Signal Result :</span><span id="signalresult">-</span></div></div><h2>SIGNAL HISTORY</h2><table>
+<tr><td>Total Signal</td><td id="totalsignal">0</td></tr>
+<tr><td>Total Win</td><td id="win">0</td></tr>
+<tr><td>Total Loss</td><td id="loss">0</td></tr>
+<tr><td>Win Streak</td><td id="winstreak">0</td></tr>
+<tr><td>Loss Streak</td><td id="lossstreak">0</td></tr>
+<tr><td>Max Win Streak</td><td id="maxwinstreak">0</td></tr>
+<tr><td>Max Loss Streak</td><td id="maxlossstreak">0</td></tr>
+<tr><td>Accuracy %</td><td id="accuracy">0%</td></tr>
+</table><h2>GAME HISTORY</h2><table id="history">
+<tr>
 <th>Period</th>
 <th>Number</th>
 <th>Big/Small</th>
 <th>Color</th>
-</tr></table><button class="downloadbtn" onclick="downloadHistory()">
+</tr>
+</table><button class="downloadbtn" onclick="downloadHistory()">
 All Game history Download now
 </button></div><script>
 
@@ -166,7 +79,6 @@ async function load(){
 
 const res=await fetch(API)
 const data=await res.json()
-
 const list=data.data.list
 
 let next=parseInt(list[0].issueNumber)+1
@@ -184,7 +96,6 @@ table.innerHTML=`
 `
 
 list.slice(0,10).forEach(r=>{
-
 let number=r.number
 let size=number>=5?"BIG":"SMALL"
 let color=number%2==0?"RED":"GREEN"
@@ -195,49 +106,51 @@ table.innerHTML+=`
 <td>${number}</td>
 <td>${size}</td>
 <td>${color}</td>
-</tr>
-`
-
+</tr>`
 })
 
 let resultNumber=list[0].number
 let resultSize=resultNumber>=5?"BIG":"SMALL"
 let resultColor=resultNumber%2==0?"RED":"GREEN"
 
-let numbers=list.slice(0,10).map(x=>x.number)
+/* AI SIGNAL */
 
+let numbers=list.slice(0,10).map(x=>x.number)
 let big=numbers.filter(n=>n>=5).length
 let small=numbers.filter(n=>n<5).length
 
 let signal=big>small?"SMALL":"BIG"
-
 currentSignal=signal
-totalSignal++
 
 document.getElementById("signal").innerText=signal
 document.getElementById("num").innerText=resultNumber
 document.getElementById("color").innerText=resultColor
 
+document.getElementById("signal").style.color =
+signal==="BIG" ? "#22c55e" : "#ef4444"
+
+/* CONFIDENCE */
+
 let confidence=50+(Math.abs(big-small)*5)
-
 if(confidence>95) confidence=95
-
 document.getElementById("confidence").innerText=confidence+"%"
+
+/* RESULT FIX */
 
 let resultText="-"
 
-if(lastPeriod!==list[0].issueNumber){
+if(lastPeriod !== list[0].issueNumber){
 
-if(currentSignal===resultSize){
+totalSignal++
+
+if(currentSignal === resultSize){
 
 win++
 winStreak++
 lossStreak=0
 resultText="WIN"
 
-if(winStreak>maxWinStreak){
-maxWinStreak=winStreak
-}
+if(winStreak>maxWinStreak) maxWinStreak=winStreak
 
 }else{
 
@@ -246,17 +159,15 @@ lossStreak++
 winStreak=0
 resultText="LOSS"
 
-if(lossStreak>maxLossStreak){
-maxLossStreak=lossStreak
+if(lossStreak>maxLossStreak) maxLossStreak=lossStreak
 }
 
-}
-
-lastPeriod=list[0].issueNumber
-
+lastPeriod = list[0].issueNumber
 }
 
 document.getElementById("signalresult").innerText=resultText
+
+/* STATS */
 
 let total=win+loss
 let accuracy=total>0?((win/total)*100).toFixed(1):0
@@ -273,47 +184,38 @@ document.getElementById("accuracy").innerText=accuracy+"%"
 }
 
 load()
-
-setInterval(load,5000)
+setInterval(load,0000)
 
 /* TIMER */
 
-let t=30
-
-setInterval(()=>{
-
-t--
-
-if(t<=0){
-t=30
+function getRealSeconds(){
+let now=new Date()
+return 30-(now.getSeconds()%30)
 }
 
+setInterval(()=>{
+let t=getRealSeconds()
 let percent=(t/30)*100
 
 document.getElementById("timer").innerText=t
 document.getElementById("timerRing").style.setProperty("--p",percent)
-
 },1000)
 
-/* DOWNLOAD GAME HISTORY */
+/* DOWNLOAD */
 
 async function downloadHistory(){
-
 let res=await fetch(API)
 let data=await res.json()
-
 let list=data.data.list
 
 let csv="Period,Number,BigSmall,Color\n"
 
 list.forEach(r=>{
-
 let number=r.number
 let size=number>=5?"BIG":"SMALL"
 let color=number%2==0?"RED":"GREEN"
 
 csv+=`${r.issueNumber},${number},${size},${color}\n`
-
 })
 
 let blob=new Blob([csv],{type:"text/csv"})
@@ -323,8 +225,7 @@ let a=document.createElement("a")
 a.href=url
 a.download="WinGo_Game_History.csv"
 a.click()
-
 }
 
 </script></body>
-  </html>
+</html>
