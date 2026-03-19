@@ -32,6 +32,7 @@ console.log(e);
 
 }
 
+runAI(); // first run
 setInterval(runAI,5000);
 
 app.get("/", (req,res)=>{
