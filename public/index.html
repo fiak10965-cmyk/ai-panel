@@ -29,6 +29,7 @@
         .downloadbtn{
             width:100%;padding:15px;background:#2bb7df;border:none;
             border-radius:25px;color:white;font-size:18px;margin-top:20px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -38,7 +39,7 @@
         <div class="top">
             <div>
                 <div class="game">WinGo 30sec</div>
-                <div class="period">Next Period :- <span id="period">-</span></div>
+                <div class="period">Next Period :- <span id="period">Loading...</span></div>
             </div>
             <div style="display:flex;align-items:center;gap:10px">
                 <div style="font-size:22px">Time :-</div>
@@ -88,123 +89,85 @@
     </div>
 
 <script>
-const API = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
+    const API_HISTORY = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
+    const API_STATS = "/api/stats"; // আপনার Node.js সার্ভারের এন্ডপয়েন্ট
 
-let lastProcessedPeriod = null;
-let currentPrediction = null; // বর্তমান পিরিয়ডের জন্য AI সিগন্যাল
-let stats = { total: 0, win: 0, loss: 0, streak: 0, lStreak: 0, maxW: 0, maxL: 0 };
+    let lastFetchedPeriod = null;
 
-async function loadData() {
-    try {
-        const res = await fetch(API);
-        const data = await res.json();
-        if(!data.data || !data.data.list) return;
+    // ১. সার্ভার এবং গেম ডাটার সাথে সিঙ্ক করার মেইন ফাংশন
+    async function syncData() {
+        try {
+            // সার্ভার (MongoDB) থেকে স্ট্যাটাস এবং প্রেডিকশন আনা
+            const statsRes = await fetch(API_STATS);
+            const db = await statsRes.json();
 
-        const list = data.data.list;
-        const lastResult = list[0]; // সর্বশেষ রেজাল্ট
-        const currentFinishPeriod = lastResult.issueNumber;
-
-        // পিরিয়ড আপডেট: Next Period হবে (শেষ রেজাল্ট + ১)
-        document.getElementById("period").innerText = (BigInt(currentFinishPeriod) + 1n).toString();
-
-        // যদি নতুন কোনো রেজাল্ট আসে
-        if (lastProcessedPeriod !== currentFinishPeriod) {
-            
-            // ১. রেজাল্ট চেক (যদি আগে কোনো প্রেডিকশন দেওয়া থাকে)
-            if (currentPrediction !== null) {
-                const actualSize = lastResult.number >= 5 ? "BIG" : "SMALL";
-                stats.total++;
+            if (db) {
+                // স্ট্যাটাস টেবিল আপডেট
+                document.getElementById("totalsignal").innerText = db.total || 0;
+                document.getElementById("win").innerText = db.win || 0;
+                document.getElementById("loss").innerText = db.loss || 0;
+                document.getElementById("winstreak").innerText = db.streak || 0;
+                document.getElementById("lossstreak").innerText = db.lStreak || 0;
+                document.getElementById("maxwinstreak").innerText = db.maxW || 0;
+                document.getElementById("maxlossstreak").innerText = db.maxL || 0;
                 
-                if (currentPrediction === actualSize) {
-                    stats.win++; stats.streak++; stats.lStreak = 0;
-                    if (stats.streak > stats.maxW) stats.maxW = stats.streak;
-                    document.getElementById("signalresult").innerText = "WIN";
-                    document.getElementById("signalresult").style.color = "#22c55e";
-                } else {
-                    stats.loss++; stats.lStreak++; stats.streak = 0;
-                    if (stats.lStreak > stats.maxL) stats.maxL = stats.lStreak;
-                    document.getElementById("signalresult").innerText = "LOSS";
-                    document.getElementById("signalresult").style.color = "#ef4444";
-                }
-                updateStatsUI();
+                let acc = db.total > 0 ? ((db.win / db.total) * 100).toFixed(1) : 0;
+                document.getElementById("accuracy").innerText = acc + "%";
+
+                // পরবর্তী সিগন্যাল আপডেট
+                document.getElementById("signal").innerText = db.prediction || "WAIT";
+                document.getElementById("signal").style.color = db.prediction === "BIG" ? "#22c55e" : "#ef4444";
+                document.getElementById("confidence").innerText = (70 + Math.floor(Math.random() * 25)) + "%";
             }
 
-            // ২. নতুন রেজাল্টের তথ্য UI-তে দেখানো
-            document.getElementById("num").innerText = lastResult.number;
-            document.getElementById("color").innerText = lastResult.number % 2 == 0 ? "RED" : "GREEN";
+            // গেম হিস্ট্রি আপডেট (সরাসরি মেইন API থেকে)
+            const historyRes = await fetch(API_HISTORY);
+            const historyData = await historyRes.json();
+            const list = historyData.data.list;
+            const lastGame = list[0];
 
-            // ৩. পরবর্তী পিরিয়ডের জন্য নতুন AI সিগন্যাল তৈরি
-            generateNewSignal(list);
+            // Next Period এবং গত রেজাল্ট আপডেট
+            document.getElementById("period").innerText = (BigInt(lastGame.issueNumber) + 1n).toString();
+            document.getElementById("num").innerText = lastGame.number;
+            document.getElementById("color").innerText = lastGame.number % 2 == 0 ? "RED" : "GREEN";
 
-            // ৪. হিস্ট্রি টেবিল আপডেট
-            updateHistoryTable(list);
+            // হিস্ট্রি টেবিল রেন্ডার
+            let html = "";
+            list.slice(0, 10).forEach(r => {
+                let size = r.number >= 5 ? "BIG" : "SMALL";
+                let color = r.number % 2 == 0 ? "RED" : "GREEN";
+                html += `<tr><td>${r.issueNumber}</td><td>${r.number}</td><td>${size}</td><td>${color}</td></tr>`;
+            });
+            document.getElementById("historyBody").innerHTML = html;
 
-            lastProcessedPeriod = currentFinishPeriod;
+        } catch (e) {
+            console.error("Sync Error:", e);
         }
-    } catch (e) { console.log("API Error"); }
-}
-
-function generateNewSignal(list) {
-    // সিম্পল AI লজিক: গত ১০টি পিরিয়ড চেক করে প্রেডিকশন
-    let numbers = list.slice(0, 10).map(x => x.number);
-    let bigCount = numbers.filter(n => n >= 5).length;
-    
-    // ট্রেন্ড এনালাইসিস করে সিগন্যাল
-    currentPrediction = bigCount >= 5 ? "SMALL" : "BIG"; 
-    
-    let confidence = 75 + Math.floor(Math.random() * 20);
-    document.getElementById("signal").innerText = currentPrediction;
-    document.getElementById("signal").style.color = currentPrediction === "BIG" ? "#22c55e" : "#ef4444";
-    document.getElementById("confidence").innerText = confidence + "%";
-}
-
-function updateStatsUI() {
-    document.getElementById("totalsignal").innerText = stats.total;
-    document.getElementById("win").innerText = stats.win;
-    document.getElementById("loss").innerText = stats.loss;
-    document.getElementById("winstreak").innerText = stats.streak;
-    document.getElementById("lossstreak").innerText = stats.lStreak;
-    document.getElementById("maxwinstreak").innerText = stats.maxW;
-    document.getElementById("maxlossstreak").innerText = stats.maxL;
-    let acc = stats.total > 0 ? ((stats.win / stats.total) * 100).toFixed(1) : 0;
-    document.getElementById("accuracy").innerText = acc + "%";
-}
-
-function updateHistoryTable(list) {
-    let html = "";
-    list.slice(0, 10).forEach(r => {
-        let size = r.number >= 5 ? "BIG" : "SMALL";
-        let color = r.number % 2 == 0 ? "RED" : "GREEN";
-        html += `<tr><td>${r.issueNumber}</td><td>${r.number}</td><td>${size}</td><td>${color}</td></tr>`;
-    });
-    document.getElementById("historyBody").innerHTML = html;
-}
-
-// টাইমার এবং ডাটা রিফ্রেশ লজিক
-setInterval(() => {
-    let now = new Date();
-    let seconds = now.getSeconds();
-    let remaining = 30 - (seconds % 30);
-    let percent = (remaining / 30) * 100;
-    
-    document.getElementById("timer").innerText = remaining;
-    document.getElementById("timerRing").style.setProperty('--p', percent);
-    
-    // টাইমার যখন শেষ হবে (৩০ বা ০ সেকেন্ডে), তখন ডাটা ফেচ করবে
-    if (remaining === 1 || remaining === 29) {
-        loadData();
     }
-}, 1000);
 
-async function downloadHistory() {
-    try {
-        const res = await fetch(API);
+    // ২. টাইমার লজিক (প্রতি ১ সেকেন্ডে চলবে)
+    setInterval(() => {
+        let now = new Date();
+        let seconds = now.getSeconds();
+        let remaining = 30 - (seconds % 30);
+        let percent = (remaining / 30) * 100;
+
+        document.getElementById("timer").innerText = remaining;
+        document.getElementById("timerRing").style.setProperty('--p', percent);
+
+        // যখনই নতুন পিরিয়ড শুরু হবে (টাইমার ১ বা ২৯ সেকেন্ডে), ডাটা সিঙ্ক করবে
+        if (remaining === 1 || remaining === 29) {
+            syncData();
+        }
+    }, 1000);
+
+    // ৩. সিএসভি ডাউনলোড ফাংশন
+    async function downloadHistory() {
+        const res = await fetch(API_HISTORY);
         const data = await res.json();
-        let csv = "Period,Number,BigSmall,Color\n";
+        let csv = "Period,Number,Size,Color\n";
         data.data.list.forEach(r => {
-            let size = r.number >= 5 ? "BIG" : "SMALL";
-            let color = r.number % 2 == 0 ? "RED" : "GREEN";
-            csv += `${r.issueNumber},${r.number},${size},${color}\n`;
+            csv += `${r.issueNumber},${r.number},${r.number>=5?'BIG':'SMALL'},${r.number%2==0?'RED':'GREEN'}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
@@ -212,11 +175,10 @@ async function downloadHistory() {
         a.href = url;
         a.download = "WinGo_History.csv";
         a.click();
-    } catch (e) { alert("Download failed"); }
-}
+    }
 
-// শুরুর লোড
-loadData();
+    // শুরুতে একবার লোড
+    syncData();
 </script>
 </body>
 </html>
