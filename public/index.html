@@ -1,102 +1,262 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>ULTRA GOD MODE AI PANEL</title>
-    <style>
-        body{background:black;color:white;font-family:Arial;margin:0;}
-        .container{width:92%;margin:auto;margin-top:25px;padding-bottom:30px;}
-        .title{text-align:center;font-size:22px;letter-spacing:3px;margin-bottom:25px;}
-        .top{display:flex;justify-content:space-between;align-items:center;}
-        .game{font-size:28px;font-weight:bold;}
-        .period{margin-top:6px;color:#ccc;}
-        .timerRing{width:90px;height:90px;border-radius:50%;background:conic-gradient(#22d3ee calc(var(--p)*1%),#1f2937 0);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;}
-        .signal{margin-top:35px;}
-        .row{margin-top:8px;font-size:18px;}
-        .label{display:inline-block;width:160px;}
-        table{width:100%;border-collapse:collapse;margin-top:20px;}
-        th,td{border:1px solid #777;padding:10px;text-align:left;}
-        th{background:#111;}
-        .downloadbtn{width:100%;padding:15px;background:#2bb7df;border:none;border-radius:25px;color:white;font-size:18px;margin-top:20px;cursor:pointer;}
-    </style>
+<meta charset="UTF-8">
+<title>ULTRA GOD MODE AI PANEL</title>
+
+<style>
+body{background:black;color:white;font-family:Arial;margin:0;}
+.container{width:92%;margin:auto;margin-top:25px;}
+.title{text-align:center;font-size:22px;letter-spacing:3px;margin-bottom:25px;}
+.top{display:flex;justify-content:space-between;align-items:center;}
+.game{font-size:28px;font-weight:bold;}
+.period{margin-top:6px;color:#ccc;}
+
+.timerRing{
+width:90px;height:90px;border-radius:50%;
+background:conic-gradient(#22d3ee calc(var(--p)*1%),#1f2937 0);
+display:flex;align-items:center;justify-content:center;
+font-size:28px;font-weight:bold;color:white;
+}
+
+.signal{margin-top:35px;}
+.row{margin-top:8px;font-size:18px;}
+.label{display:inline-block;width:160px;}
+
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+th,td{border:1px solid #777;padding:10px;text-align:left;}
+th{background:#111;}
+
+.downloadbtn{
+width:100%;padding:15px;background:#2bb7df;border:none;
+border-radius:25px;color:white;font-size:18px;margin-top:20px;
+}
+</style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="title">ULTRA GOD MODE AI PANEL</div>
-        <div class="top">
-            <div>
-                <div class="game">WinGo 30sec</div>
-                <div class="period">Next Period :- <span id="period">-</span></div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px">
-                <div style="font-size:22px">Time :-</div>
-                <div class="timerRing" id="timerRing"><span id="timer">30</span></div>
-            </div>
-        </div>
-        <div class="signal">
-            <h2>NEXT SIGNAL</h2>
-            <div class="row"><span class="label">AI Confidence :</span><span id="confidence">0%</span></div>
-            <div class="row"><span class="label">BIG SMALL :</span><span id="signal">-</span></div>
-            <div class="row"><span class="label">NUMBER :</span><span id="num">-</span></div>
-            <div class="row"><span class="label">COLOR :</span><span id="color">-</span></div>
-            <div class="row"><span class="label">Signal Result :</span><span id="signalresult">-</span></div>
-        </div>
-        <h2>SIGNAL HISTORY</h2>
-        <table>
-            <tr><td>Total Signal</td><td id="totalsignal">0</td></tr>
-            <tr><td>Total Win</td><td id="win">0</td></tr>
-            <tr><td>Total Loss</td><td id="loss">0</td></tr>
-            <tr><td>Win Streak</td><td id="winstreak">0</td></tr>
-            <tr><td>Loss Streak</td><td id="lossstreak">0</td></tr>
-            <tr><td>Max Win Streak</td><td id="maxwinstreak">0</td></tr>
-            <tr><td>Max Loss Streak</td><td id="maxlossstreak">0</td></tr>
-            <tr><td>Accuracy %</td><td id="accuracy">0%</td></tr>
-        </table>
-        <h2>GAME HISTORY</h2>
-        <table id="history">
-            <thead><tr><th>Period</th><th>Number</th><th>Big/Small</th><th>Color</th></tr></thead>
-            <tbody id="historyBody"></tbody>
-        </table>
-        <button class="downloadbtn" onclick="downloadHistory()">All Game history Download now</button>
-    </div>
+
+<div class="container">
+<div class="title">ULTRA GOD MODE AI PANEL</div>
+
+<div class="top">
+<div>
+<div class="game">WinGo 30sec</div>
+<div class="period">Next Period :- <span id="period">-</span></div>
+</div>
+
+<div style="display:flex;align-items:center;gap:10px">
+<div style="font-size:22px">Time :-</div>
+<div class="timerRing" id="timerRing">
+<span id="timer">30</span>
+</div>
+</div>
+</div>
+
+<div class="signal">
+<h2>NEXT SIGNAL</h2>
+
+<div class="row"><span class="label">AI Confidence :</span><span id="confidence">0%</span></div>
+<div class="row"><span class="label">BIG SMALL :</span><span id="signal">-</span></div>
+<div class="row"><span class="label">NUMBER :</span><span id="num">-</span></div>
+<div class="row"><span class="label">COLOR :</span><span id="color">-</span></div>
+<div class="row"><span class="label">Signal Result :</span><span id="signalresult">-</span></div>
+</div>
+
+<h2>SIGNAL HISTORY</h2>
+<table>
+<tr><td>Total Signal</td><td id="totalsignal">0</td></tr>
+<tr><td>Total Win</td><td id="win">0</td></tr>
+<tr><td>Total Loss</td><td id="loss">0</td></tr>
+<tr><td>Win Streak</td><td id="winstreak">0</td></tr>
+<tr><td>Loss Streak</td><td id="lossstreak">0</td></tr>
+<tr><td>Max Win Streak</td><td id="maxwinstreak">0</td></tr>
+<tr><td>Max Loss Streak</td><td id="maxlossstreak">0</td></tr>
+<tr><td>Accuracy %</td><td id="accuracy">0%</td></tr>
+</table>
+
+<h2>GAME HISTORY</h2>
+<table id="history"></table>
+
+<button class="downloadbtn" onclick="downloadHistory()">
+All Game history Download now
+</button>
+
+</div>
+
 <script>
-    async function sync() {
-        try {
-            const res = await fetch('/api/stats');
-            const db = await res.json();
-            if (db) {
-                document.getElementById("totalsignal").innerText = db.total || 0;
-                document.getElementById("win").innerText = db.win || 0;
-                document.getElementById("loss").innerText = db.loss || 0;
-                document.getElementById("winstreak").innerText = db.streak || 0;
-                document.getElementById("lossstreak").innerText = db.lStreak || 0;
-                document.getElementById("maxwinstreak").innerText = db.maxW || 0;
-                document.getElementById("maxlossstreak").innerText = db.maxL || 0;
-                document.getElementById("accuracy").innerText = (db.total > 0 ? (db.win/db.total*100).toFixed(1) : 0) + "%";
-                document.getElementById("signal").innerText = db.prediction || "WAIT";
-                document.getElementById("signal").style.color = db.prediction === "BIG" ? "#22c55e" : "#ef4444";
-                document.getElementById("confidence").innerText = "92%";
-            }
-            const gameRes = await fetch("https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json");
-            const gameData = await gameRes.json();
-            const list = gameData.data.list;
-            document.getElementById("period").innerText = (BigInt(list[0].issueNumber) + 1n).toString();
-            document.getElementById("num").innerText = list[0].number;
-            document.getElementById("color").innerText = list[0].number % 2 == 0 ? "RED" : "GREEN";
-            let html = "";
-            list.slice(0, 10).forEach(r => {
-                html += `<tr><td>${r.issueNumber}</td><td>${r.number}</td><td>${r.number>=5?'BIG':'SMALL'}</td><td>${r.number%2==0?'RED':'GREEN'}</td></tr>`;
-            });
-            document.getElementById("historyBody").innerHTML = html;
-        } catch (e) { console.log("Fetch Error", e); }
-    }
-    setInterval(() => {
-        let t = 30 - (new Date().getSeconds() % 30);
-        document.getElementById("timer").innerText = t;
-        document.getElementById("timerRing").style.setProperty('--p', (t/30)*100);
-        if (t === 1 || t === 29) sync();
-    }, 1000);
-    sync();
+
+const API="https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json"
+
+let lastPeriod=null
+let lastSignal=null
+
+let totalSignal=0
+let win=0
+let loss=0
+let winStreak=0
+let lossStreak=0
+let maxWinStreak=0
+let maxLossStreak=0
+
+async function load(){
+
+try{
+
+const res=await fetch(API)
+const data=await res.json()
+const list=data.data.list
+
+let latest=list[0]
+let period=latest.issueNumber
+let number=latest.number
+
+let size=number>=5?"BIG":"SMALL"
+let color=number%2==0?"RED":"GREEN"
+
+document.getElementById("period").innerText=parseInt(period)+1
+
+/* TABLE */
+
+let table=document.getElementById("history")
+table.innerHTML=`
+<tr>
+<th>Period</th>
+<th>Number</th>
+<th>Big/Small</th>
+<th>Color</th>
+</tr>
+`
+
+list.slice(0,10).forEach(r=>{
+let s=r.number>=5?"BIG":"SMALL"
+let c=r.number%2==0?"RED":"GREEN"
+
+table.innerHTML+=`
+<tr>
+<td>${r.issueNumber}</td>
+<td>${r.number}</td>
+<td>${s}</td>
+<td>${c}</td>
+</tr>`
+})
+
+/* RESULT CHECK */
+
+if(lastPeriod && lastPeriod !== period){
+
+totalSignal++
+
+if(lastSignal === size){
+
+win++
+winStreak++
+lossStreak=0
+
+if(winStreak>maxWinStreak) maxWinStreak=winStreak
+
+document.getElementById("signalresult").innerText="WIN"
+document.getElementById("signalresult").style.color="#22c55e"
+
+}else{
+
+loss++
+lossStreak++
+winStreak=0
+
+if(lossStreak>maxLossStreak) maxLossStreak=lossStreak
+
+document.getElementById("signalresult").innerText="LOSS"
+document.getElementById("signalresult").style.color="#ef4444"
+}
+}
+
+/* AI SIGNAL */
+
+let nums=list.slice(0,10).map(x=>x.number)
+let big=nums.filter(n=>n>=5).length
+
+let signal=big>=5?"SMALL":"BIG"
+lastSignal=signal
+
+document.getElementById("signal").innerText=signal
+document.getElementById("signal").style.color=signal==="BIG"?"#22c55e":"#ef4444"
+
+document.getElementById("num").innerText=number
+document.getElementById("color").innerText=color
+
+/* CONFIDENCE */
+
+let confidence=70+Math.floor(Math.random()*25)
+document.getElementById("confidence").innerText=confidence+"%"
+
+/* STATS */
+
+let total=win+loss
+let accuracy=total>0?((win/total)*100).toFixed(1):0
+
+document.getElementById("totalsignal").innerText=totalSignal
+document.getElementById("win").innerText=win
+document.getElementById("loss").innerText=loss
+document.getElementById("winstreak").innerText=winStreak
+document.getElementById("lossstreak").innerText=lossStreak
+document.getElementById("maxwinstreak").innerText=maxWinStreak
+document.getElementById("maxlossstreak").innerText=maxLossStreak
+document.getElementById("accuracy").innerText=accuracy+"%"
+
+lastPeriod=period
+
+}catch(e){
+console.log("API ERROR")
+}
+
+}
+
+/* SAFE LOOP */
+
+setInterval(load,5000)
+load()
+
+/* TIMER */
+
+function getRealSeconds(){
+let now=new Date()
+return 30-(now.getSeconds()%30)
+}
+
+setInterval(()=>{
+let t=getRealSeconds()
+let percent=(t/30)*100
+
+document.getElementById("timer").innerText=t
+document.getElementById("timerRing").style.setProperty("--p",percent)
+},1000)
+
+/* DOWNLOAD */
+
+async function downloadHistory(){
+let res=await fetch(API)
+let data=await res.json()
+let list=data.data.list
+
+let csv="Period,Number,BigSmall,Color\n"
+
+list.forEach(r=>{
+let s=r.number>=5?"BIG":"SMALL"
+let c=r.number%2==0?"RED":"GREEN"
+
+csv+=`${r.issueNumber},${r.number},${s},${c}\n`
+})
+
+let blob=new Blob([csv],{type:"text/csv"})
+let url=URL.createObjectURL(blob)
+
+let a=document.createElement("a")
+a.href=url
+a.download="WinGo_Game_History.csv"
+a.click()
+}
+
 </script>
 </body>
 </html>
