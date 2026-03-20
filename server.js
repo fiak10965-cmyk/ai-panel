@@ -2,9 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const cors = require('cors');
-const path = require('path');
-
 const app = express();
+
 app.use(cors());
 app.use(express.static('public'));
 
@@ -20,34 +19,35 @@ const StatsSchema = new mongoose.Schema({
     lStreak: { type: Number, default: 0 },
     maxW: { type: Number, default: 0 },
     maxL: { type: Number, default: 0 },
-    lastPeriod: String,
-    prediction: String
+    lastPeriod: { type: String, default: "" },
+    prediction: { type: String, default: "WAIT" }
 });
 const Stats = mongoose.model('Stats', StatsSchema);
 
-// MongoDB কানেকশন
-if (MONGO_URI) {
-    mongoose.connect(MONGO_URI).then(() => console.log("✅ MongoDB Connected"));
-} else {
-    console.error("❌ MONGO_URI is missing in Variables!");
-}
+// MongoDB কানেকশন ও অটো-সেটআপ
+mongoose.connect(MONGO_URI).then(async () => {
+    console.log("✅ MongoDB Connected");
+    let check = await Stats.findOne();
+    if (!check) await Stats.create({}); // প্রথমবার ডাটাবেস তৈরি করবে
+}).catch(err => console.log("❌ DB Error:", err));
 
 const API_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
 
-// ব্যাকগ্রাউন্ড লজিক
+// ২৪/৭ ব্যাকগ্রাউন্ড লুপ
 setInterval(async () => {
     try {
-        const response = await axios.get(API_URL);
-        const list = response.data.data.list;
-        const lastResult = list[0];
-        const currentFinishPeriod = lastResult.issueNumber;
+        const res = await axios.get(API_URL);
+        const list = res.data.data.list;
+        const lastGame = list[0];
+        const currentPeriod = lastGame.issueNumber;
 
         let db = await Stats.findOne();
         if (!db) db = await Stats.create({});
 
-        if (db.lastPeriod !== currentFinishPeriod) {
-            if (db.prediction) {
-                const actualSize = lastResult.number >= 5 ? "BIG" : "SMALL";
+        if (db.lastPeriod !== currentPeriod) {
+            // উইন/লস চেক
+            if (db.prediction && db.prediction !== "WAIT") {
+                const actualSize = lastGame.number >= 5 ? "BIG" : "SMALL";
                 db.total++;
                 if (db.prediction === actualSize) {
                     db.win++; db.streak++; db.lStreak = 0;
@@ -57,25 +57,19 @@ setInterval(async () => {
                     if (db.lStreak > db.maxL) db.maxL = db.lStreak;
                 }
             }
-            // ট্রেন্ড অনুযায়ী প্রেডিকশন
-            let bigCount = list.slice(0, 10).filter(n => n.number >= 5).length;
-            db.prediction = bigCount >= 5 ? "SMALL" : "BIG";
-            db.lastPeriod = currentFinishPeriod;
+            // নতুন প্রেডিকশন
+            let bigs = list.slice(0, 10).filter(n => n.number >= 5).length;
+            db.prediction = bigs >= 5 ? "SMALL" : "BIG";
+            db.lastPeriod = currentPeriod;
             await db.save();
+            console.log(`✅ Period ${currentPeriod} Updated!`);
         }
-    } catch (e) {
-        console.log("Background Task Error:", e.message);
-    }
+    } catch (e) { console.log("Loop Error"); }
 }, 5000);
 
-// API Endpoint
 app.get('/api/stats', async (req, res) => {
-    try {
-        const db = await Stats.findOne();
-        res.json(db || {});
-    } catch (e) {
-        res.status(500).json({ error: "DB Error" });
-    }
+    const data = await Stats.findOne();
+    res.json(data || {});
 });
 
 app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
