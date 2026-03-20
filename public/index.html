@@ -5,12 +5,12 @@
     <title>ULTRA GOD MODE AI PANEL</title>
     <style>
         body{background:black;color:white;font-family:Arial;margin:0;}
-        .container{width:92%;margin:auto;margin-top:25px;}
+        .container{width:92%;margin:auto;margin-top:25px;padding-bottom:30px;}
         .title{text-align:center;font-size:22px;letter-spacing:3px;margin-bottom:25px;}
         .top{display:flex;justify-content:space-between;align-items:center;}
         .game{font-size:28px;font-weight:bold;}
         .period{margin-top:6px;color:#ccc;}
-        .timerRing{width:90px;height:90px;border-radius:50%;background:conic-gradient(#22d3ee calc(var(--p)*1%),#1f2937 0);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:white;}
+        .timerRing{width:90px;height:90px;border-radius:50%;background:conic-gradient(#22d3ee calc(var(--p)*1%),#1f2937 0);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;}
         .signal{margin-top:35px;}
         .row{margin-top:8px;font-size:18px;}
         .label{display:inline-block;width:160px;}
@@ -59,12 +59,11 @@
         </table>
         <button class="downloadbtn" onclick="downloadHistory()">All Game history Download now</button>
     </div>
-
 <script>
     async function sync() {
         try {
-            const sRes = await fetch('/api/stats');
-            const db = await sRes.json();
+            const res = await fetch('/api/stats');
+            const db = await res.json();
             if (db) {
                 document.getElementById("totalsignal").innerText = db.total || 0;
                 document.getElementById("win").innerText = db.win || 0;
@@ -74,13 +73,13 @@
                 document.getElementById("maxwinstreak").innerText = db.maxW || 0;
                 document.getElementById("maxlossstreak").innerText = db.maxL || 0;
                 document.getElementById("accuracy").innerText = (db.total > 0 ? (db.win/db.total*100).toFixed(1) : 0) + "%";
-                document.getElementById("signal").innerText = db.prediction || "-";
+                document.getElementById("signal").innerText = db.prediction || "WAIT";
                 document.getElementById("signal").style.color = db.prediction === "BIG" ? "#22c55e" : "#ef4444";
                 document.getElementById("confidence").innerText = "92%";
             }
-            const hRes = await fetch("https://draw.ar-lottery01.com");
-            const hData = await hRes.json();
-            const list = hData.data.list;
+            const gameRes = await fetch("https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json");
+            const gameData = await gameRes.json();
+            const list = gameData.data.list;
             document.getElementById("period").innerText = (BigInt(list[0].issueNumber) + 1n).toString();
             document.getElementById("num").innerText = list[0].number;
             document.getElementById("color").innerText = list[0].number % 2 == 0 ? "RED" : "GREEN";
@@ -89,7 +88,7 @@
                 html += `<tr><td>${r.issueNumber}</td><td>${r.number}</td><td>${r.number>=5?'BIG':'SMALL'}</td><td>${r.number%2==0?'RED':'GREEN'}</td></tr>`;
             });
             document.getElementById("historyBody").innerHTML = html;
-        } catch (e) { console.log(e); }
+        } catch (e) { console.log("Fetch Error", e); }
     }
     setInterval(() => {
         let t = 30 - (new Date().getSeconds() % 30);
