@@ -1,10 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const axios = require('axios');
+const cors = require('cors');
+const path = require('path');
+
 const app = express();
+app.use(cors());
+app.use(express.static('public'));
 
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = "mongodb+srv://aipanel:<db_password>@cluster0.xesi9zv.mongodb.net/?appName=Cluster0"; // Railway Environment Variable এ রাখলে ভালো
+const MONGO_URI = process.env.MONGO_URI;
 
 // MongoDB Schema
 const StatsSchema = new mongoose.Schema({
@@ -18,15 +23,13 @@ const StatsSchema = new mongoose.Schema({
     lastPeriod: String,
     prediction: String
 });
-
 const Stats = mongoose.model('Stats', StatsSchema);
 
-// MongoDB কানেকশন
-mongoose.connect(MONGO_URI).then(() => console.log("MongoDB Connected"));
+mongoose.connect(MONGO_URI).then(() => console.log("✅ MongoDB Connected"));
 
 const API = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
 
-// ব্যাকগ্রাউন্ড লজিক (২৪/৭ চলবে)
+// ২৪/৭ ব্যাকগ্রাউন্ড লুপ
 setInterval(async () => {
     try {
         const res = await axios.get(API);
@@ -38,7 +41,6 @@ setInterval(async () => {
         if (!db) db = await Stats.create({});
 
         if (db.lastPeriod !== currentFinishPeriod) {
-            // রেজাল্ট ক্যালকুলেশন
             if (db.prediction) {
                 const actualSize = lastRes.number >= 5 ? "BIG" : "SMALL";
                 db.total++;
@@ -50,16 +52,12 @@ setInterval(async () => {
                     if (db.lStreak > db.maxL) db.maxL = db.lStreak;
                 }
             }
-            
-            // নতুন প্রেডিকশন (Trend Analysis)
             let bigCount = list.slice(0, 10).filter(n => n.number >= 5).length;
             db.prediction = bigCount >= 5 ? "SMALL" : "BIG";
             db.lastPeriod = currentFinishPeriod;
-            
             await db.save();
-            console.log(`Updated Period: ${currentFinishPeriod}`);
         }
-    } catch (e) { console.error("Loop Error"); }
+    } catch (e) { console.log("Fetch Error"); }
 }, 5000);
 
 app.get('/api/stats', async (req, res) => {
@@ -67,5 +65,4 @@ app.get('/api/stats', async (req, res) => {
     res.json(db || {});
 });
 
-app.use(express.static('public'));
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
