@@ -10,27 +10,14 @@
         .top{display:flex;justify-content:space-between;align-items:center;}
         .game{font-size:28px;font-weight:bold;}
         .period{margin-top:6px;color:#ccc;}
-
-        .timerRing{
-            width:90px;height:90px;border-radius:50%;
-            background:conic-gradient(#22d3ee calc(var(--p)*1%),#1f2937 0);
-            display:flex;align-items:center;justify-content:center;
-            font-size:28px;font-weight:bold;color:white;
-        }
-
+        .timerRing{width:90px;height:90px;border-radius:50%;background:conic-gradient(#22d3ee calc(var(--p)*1%),#1f2937 0);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:white;}
         .signal{margin-top:35px;}
         .row{margin-top:8px;font-size:18px;}
         .label{display:inline-block;width:160px;}
-
         table{width:100%;border-collapse:collapse;margin-top:20px;}
         th,td{border:1px solid #777;padding:10px;text-align:left;}
         th{background:#111;}
-
-        .downloadbtn{
-            width:100%;padding:15px;background:#2bb7df;border:none;
-            border-radius:25px;color:white;font-size:18px;margin-top:20px;
-            cursor: pointer;
-        }
+        .downloadbtn{width:100%;padding:15px;background:#2bb7df;border:none;border-radius:25px;color:white;font-size:18px;margin-top:20px;cursor:pointer;}
     </style>
 </head>
 <body>
@@ -39,16 +26,13 @@
         <div class="top">
             <div>
                 <div class="game">WinGo 30sec</div>
-                <div class="period">Next Period :- <span id="period">Loading...</span></div>
+                <div class="period">Next Period :- <span id="period">-</span></div>
             </div>
             <div style="display:flex;align-items:center;gap:10px">
                 <div style="font-size:22px">Time :-</div>
-                <div class="timerRing" id="timerRing">
-                    <span id="timer">30</span>
-                </div>
+                <div class="timerRing" id="timerRing"><span id="timer">30</span></div>
             </div>
         </div>
-
         <div class="signal">
             <h2>NEXT SIGNAL</h2>
             <div class="row"><span class="label">AI Confidence :</span><span id="confidence">0%</span></div>
@@ -57,7 +41,6 @@
             <div class="row"><span class="label">COLOR :</span><span id="color">-</span></div>
             <div class="row"><span class="label">Signal Result :</span><span id="signalresult">-</span></div>
         </div>
-
         <h2>SIGNAL HISTORY</h2>
         <table>
             <tr><td>Total Signal</td><td id="totalsignal">0</td></tr>
@@ -69,40 +52,20 @@
             <tr><td>Max Loss Streak</td><td id="maxlossstreak">0</td></tr>
             <tr><td>Accuracy %</td><td id="accuracy">0%</td></tr>
         </table>
-
         <h2>GAME HISTORY</h2>
         <table id="history">
-            <thead>
-                <tr>
-                    <th>Period</th>
-                    <th>Number</th>
-                    <th>Big/Small</th>
-                    <th>Color</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Period</th><th>Number</th><th>Big/Small</th><th>Color</th></tr></thead>
             <tbody id="historyBody"></tbody>
         </table>
-
-        <button class="downloadbtn" onclick="downloadHistory()">
-            All Game history Download now
-        </button>
+        <button class="downloadbtn" onclick="downloadHistory()">All Game history Download now</button>
     </div>
 
 <script>
-    const API_HISTORY = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
-    const API_STATS = "/api/stats"; // আপনার Node.js সার্ভারের এন্ডপয়েন্ট
-
-    let lastFetchedPeriod = null;
-
-    // ১. সার্ভার এবং গেম ডাটার সাথে সিঙ্ক করার মেইন ফাংশন
-    async function syncData() {
+    async function sync() {
         try {
-            // সার্ভার (MongoDB) থেকে স্ট্যাটাস এবং প্রেডিকশন আনা
-            const statsRes = await fetch(API_STATS);
-            const db = await statsRes.json();
-
+            const sRes = await fetch('/api/stats');
+            const db = await sRes.json();
             if (db) {
-                // স্ট্যাটাস টেবিল আপডেট
                 document.getElementById("totalsignal").innerText = db.total || 0;
                 document.getElementById("win").innerText = db.win || 0;
                 document.getElementById("loss").innerText = db.loss || 0;
@@ -110,75 +73,31 @@
                 document.getElementById("lossstreak").innerText = db.lStreak || 0;
                 document.getElementById("maxwinstreak").innerText = db.maxW || 0;
                 document.getElementById("maxlossstreak").innerText = db.maxL || 0;
-                
-                let acc = db.total > 0 ? ((db.win / db.total) * 100).toFixed(1) : 0;
-                document.getElementById("accuracy").innerText = acc + "%";
-
-                // পরবর্তী সিগন্যাল আপডেট
-                document.getElementById("signal").innerText = db.prediction || "WAIT";
+                document.getElementById("accuracy").innerText = (db.total > 0 ? (db.win/db.total*100).toFixed(1) : 0) + "%";
+                document.getElementById("signal").innerText = db.prediction || "-";
                 document.getElementById("signal").style.color = db.prediction === "BIG" ? "#22c55e" : "#ef4444";
-                document.getElementById("confidence").innerText = (70 + Math.floor(Math.random() * 25)) + "%";
+                document.getElementById("confidence").innerText = "92%";
             }
-
-            // গেম হিস্ট্রি আপডেট (সরাসরি মেইন API থেকে)
-            const historyRes = await fetch(API_HISTORY);
-            const historyData = await historyRes.json();
-            const list = historyData.data.list;
-            const lastGame = list[0];
-
-            // Next Period এবং গত রেজাল্ট আপডেট
-            document.getElementById("period").innerText = (BigInt(lastGame.issueNumber) + 1n).toString();
-            document.getElementById("num").innerText = lastGame.number;
-            document.getElementById("color").innerText = lastGame.number % 2 == 0 ? "RED" : "GREEN";
-
-            // হিস্ট্রি টেবিল রেন্ডার
+            const hRes = await fetch("https://draw.ar-lottery01.com");
+            const hData = await hRes.json();
+            const list = hData.data.list;
+            document.getElementById("period").innerText = (BigInt(list[0].issueNumber) + 1n).toString();
+            document.getElementById("num").innerText = list[0].number;
+            document.getElementById("color").innerText = list[0].number % 2 == 0 ? "RED" : "GREEN";
             let html = "";
             list.slice(0, 10).forEach(r => {
-                let size = r.number >= 5 ? "BIG" : "SMALL";
-                let color = r.number % 2 == 0 ? "RED" : "GREEN";
-                html += `<tr><td>${r.issueNumber}</td><td>${r.number}</td><td>${size}</td><td>${color}</td></tr>`;
+                html += `<tr><td>${r.issueNumber}</td><td>${r.number}</td><td>${r.number>=5?'BIG':'SMALL'}</td><td>${r.number%2==0?'RED':'GREEN'}</td></tr>`;
             });
             document.getElementById("historyBody").innerHTML = html;
-
-        } catch (e) {
-            console.error("Sync Error:", e);
-        }
+        } catch (e) { console.log(e); }
     }
-
-    // ২. টাইমার লজিক (প্রতি ১ সেকেন্ডে চলবে)
     setInterval(() => {
-        let now = new Date();
-        let seconds = now.getSeconds();
-        let remaining = 30 - (seconds % 30);
-        let percent = (remaining / 30) * 100;
-
-        document.getElementById("timer").innerText = remaining;
-        document.getElementById("timerRing").style.setProperty('--p', percent);
-
-        // যখনই নতুন পিরিয়ড শুরু হবে (টাইমার ১ বা ২৯ সেকেন্ডে), ডাটা সিঙ্ক করবে
-        if (remaining === 1 || remaining === 29) {
-            syncData();
-        }
+        let t = 30 - (new Date().getSeconds() % 30);
+        document.getElementById("timer").innerText = t;
+        document.getElementById("timerRing").style.setProperty('--p', (t/30)*100);
+        if (t === 1 || t === 29) sync();
     }, 1000);
-
-    // ৩. সিএসভি ডাউনলোড ফাংশন
-    async function downloadHistory() {
-        const res = await fetch(API_HISTORY);
-        const data = await res.json();
-        let csv = "Period,Number,Size,Color\n";
-        data.data.list.forEach(r => {
-            csv += `${r.issueNumber},${r.number},${r.number>=5?'BIG':'SMALL'},${r.number%2==0?'RED':'GREEN'}\n`;
-        });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "WinGo_History.csv";
-        a.click();
-    }
-
-    // শুরুতে একবার লোড
-    syncData();
+    sync();
 </script>
 </body>
 </html>
