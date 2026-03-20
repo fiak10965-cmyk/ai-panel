@@ -25,24 +25,29 @@ const StatsSchema = new mongoose.Schema({
 });
 const Stats = mongoose.model('Stats', StatsSchema);
 
-mongoose.connect(MONGO_URI).then(() => console.log("✅ MongoDB Connected"));
+// MongoDB কানেকশন
+if (MONGO_URI) {
+    mongoose.connect(MONGO_URI).then(() => console.log("✅ MongoDB Connected"));
+} else {
+    console.error("❌ MONGO_URI is missing in Variables!");
+}
 
-const API = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
+const API_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
 
-// ২৪/৭ ব্যাকগ্রাউন্ড লুপ
+// ব্যাকগ্রাউন্ড লজিক
 setInterval(async () => {
     try {
-        const res = await axios.get(API);
-        const list = res.data.data.list;
-        const lastRes = list[0];
-        const currentFinishPeriod = lastRes.issueNumber;
+        const response = await axios.get(API_URL);
+        const list = response.data.data.list;
+        const lastResult = list[0];
+        const currentFinishPeriod = lastResult.issueNumber;
 
         let db = await Stats.findOne();
         if (!db) db = await Stats.create({});
 
         if (db.lastPeriod !== currentFinishPeriod) {
             if (db.prediction) {
-                const actualSize = lastRes.number >= 5 ? "BIG" : "SMALL";
+                const actualSize = lastResult.number >= 5 ? "BIG" : "SMALL";
                 db.total++;
                 if (db.prediction === actualSize) {
                     db.win++; db.streak++; db.lStreak = 0;
@@ -52,17 +57,25 @@ setInterval(async () => {
                     if (db.lStreak > db.maxL) db.maxL = db.lStreak;
                 }
             }
+            // ট্রেন্ড অনুযায়ী প্রেডিকশন
             let bigCount = list.slice(0, 10).filter(n => n.number >= 5).length;
             db.prediction = bigCount >= 5 ? "SMALL" : "BIG";
             db.lastPeriod = currentFinishPeriod;
             await db.save();
         }
-    } catch (e) { console.log("Fetch Error"); }
+    } catch (e) {
+        console.log("Background Task Error:", e.message);
+    }
 }, 5000);
 
+// API Endpoint
 app.get('/api/stats', async (req, res) => {
-    const db = await Stats.findOne();
-    res.json(db || {});
+    try {
+        const db = await Stats.findOne();
+        res.json(db || {});
+    } catch (e) {
+        res.status(500).json({ error: "DB Error" });
+    }
 });
 
 app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
