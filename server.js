@@ -20,25 +20,14 @@ const SignalSchema = new mongoose.Schema({
 
 const Signal = mongoose.model("Signal", SignalSchema);
 
-/* ================= API FETCH ================= */
+/* ================= API FETCH (FIXED) ================= */
+
+const API = "https://api.allorigins.win/raw?url=https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
 
 async function getData() {
   try {
-    const res = await axios.get(
-      "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json",
-      {
-        headers: {
-          "User-Agent": "Mozilla/5.0",
-          "Accept": "*/*",
-          "Accept-Language": "en-US,en;q=0.9",
-          "Origin": "https://draw.ar-lottery01.com",
-          "Referer": "https://draw.ar-lottery01.com/",
-        },
-      }
-    );
-
+    const res = await axios.get(API);
     return res.data.data.list;
-
   } catch (err) {
     console.log("❌ API ERROR:", err.message);
     return [];
