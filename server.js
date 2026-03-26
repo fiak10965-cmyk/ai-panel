@@ -12,6 +12,8 @@ mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("✅ MongoDB Connected"))
 .catch(err => console.log("❌ MongoDB Error:", err));
 
+/* ================= MODEL ================= */
+
 const SignalSchema = new mongoose.Schema({
   period: String,
   result: String,
@@ -21,11 +23,11 @@ const SignalSchema = new mongoose.Schema({
 
 const Signal = mongoose.model("Signal", SignalSchema);
 
-/* ================= STATIC ================= */
+/* ================= STATIC FILE ================= */
 
 app.use(express.static(path.join(__dirname, "public")));
 
-/* ================= API FETCH (PRO SAFE) ================= */
+/* ================= API FETCH SAFE ================= */
 
 const API_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
 
@@ -37,7 +39,7 @@ async function getData() {
     });
 
     if (!res.data || !res.data.data || !res.data.data.list) {
-      console.log("❌ Invalid API response");
+      console.log("❌ API BLOCKED");
       return [];
     }
 
@@ -52,20 +54,12 @@ async function getData() {
 /* ================= LOGIC ================= */
 
 let lastPeriod = null;
-let isRunning = false;
 
 async function processSignal() {
-  if (isRunning) return;
-  isRunning = true;
-
   try {
     const list = await getData();
 
-    if (!list.length) {
-      console.log("⚠️ No data");
-      isRunning = false;
-      return;
-    }
+    if (!list.length) return;
 
     const current = list[0];
     const period = current.issueNumber;
@@ -92,10 +86,8 @@ async function processSignal() {
     }
 
   } catch (e) {
-    console.log("❌ Process error");
+    console.log("❌ PROCESS ERROR");
   }
-
-  isRunning = false;
 }
 
 /* ================= ROUTES ================= */
@@ -142,6 +134,12 @@ app.get("/api/stats", async (req, res) => {
   });
 });
 
+/* ================= ROOT FIX ================= */
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 /* ================= LOOP ================= */
 
 setInterval(processSignal, 7000);
@@ -150,4 +148,4 @@ setInterval(processSignal, 7000);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-}); প
+});
