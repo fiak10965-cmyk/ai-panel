@@ -1,18 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ULTRA GOD MODE AI PANEL</title>
+
+<style>
+body{background:black;color:white;font-family:Arial;margin:0;}
+.container{width:92%;margin:auto;margin-top:25px;}
+.title{text-align:center;font-size:22px;letter-spacing:3px;margin-bottom:25px;}
+.top{display:flex;justify-content:space-between;align-items:center;}
+.game{font-size:28px;font-weight:bold;}
+.period{margin-top:6px;color:#ccc;}
+
+.timerRing{
+width:90px;height:90px;border-radius:50%;
+background:conic-gradient(#22d3ee calc(var(--p)*1%),#1f2937 0);
+display:flex;align-items:center;justify-content:center;
+font-size:28px;font-weight:bold;color:white;
+}
+
+.signal{margin-top:35px;}
+.row{margin-top:8px;font-size:18px;}
+.label{display:inline-block;width:160px;}
+
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+th,td{border:1px solid #777;padding:10px;text-align:left;}
+th{background:#111;}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="title">ULTRA GOD MODE AI PANEL</div>
+
+<div class="top">
+<div>
+<div class="game">WinGo 30sec</div>
+<div class="period">LIVE DATA</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:10px">
+<div style="font-size:22px">Time :-</div>
+<div class="timerRing" id="timerRing">
+<span id="timer">30</span>
+</div>
+</div>
+</div>
+
+<div class="signal">
+<h2>NEXT SIGNAL</h2>
+
+<div class="row"><span class="label">AI Confidence :</span><span id="confidence">0%</span></div>
+<div class="row"><span class="label">BIG SMALL :</span><span id="signal">-</span></div>
+<div class="row"><span class="label">Signal Result :</span><span id="signalresult">-</span></div>
+</div>
+
+<h2>SIGNAL HISTORY</h2>
+<table>
+<tr><td>Total Signal</td><td id="totalsignal">0</td></tr>
+<tr><td>Total Win</td><td id="win">0</td></tr>
+<tr><td>Total Loss</td><td id="loss">0</td></tr>
+<tr><td>Win Streak</td><td id="winstreak">0</td></tr>
+<tr><td>Loss Streak</td><td id="lossstreak">0</td></tr>
+<tr><td>Max Win Streak</td><td id="maxwinstreak">0</td></tr>
+<tr><td>Max Loss Streak</td><td id="maxlossstreak">0</td></tr>
+<tr><td>Accuracy %</td><td id="accuracy">0%</td></tr>
+</table>
+
+<h2>GAME HISTORY</h2>
+<table id="history"></table>
+
+</div>
+
 <script>
 
+/* ✅ BACKEND API */
 const API="/api/stats"
 
-/* ================= LOAD ================= */
-
 async function load(){
-
 try{
-
 const res=await fetch(API)
 const data=await res.json()
 
 /* STATS */
-
 document.getElementById("totalsignal").innerText=data.total
 document.getElementById("win").innerText=data.win
 document.getElementById("loss").innerText=data.loss
@@ -23,13 +95,12 @@ document.getElementById("maxlossstreak").innerText=data.maxLossStreak
 document.getElementById("accuracy").innerText=data.accuracy+"%"
 
 /* HISTORY TABLE */
-
 let table=document.getElementById("history")
 table.innerHTML=`
 <tr>
 <th>Period</th>
 <th>Signal</th>
-<th>Actual</th>
+<th>Result</th>
 </tr>
 `
 
@@ -43,48 +114,32 @@ table.innerHTML+=`
 })
 
 /* LAST SIGNAL */
-
 if(data.history.length){
-
 let last=data.history[0]
 
 document.getElementById("signal").innerText=last.result
-document.getElementById("signal").style.color=last.result==="BIG"?"#22c55e":"#ef4444"
+document.getElementById("signal").style.color=
+last.result==="BIG"?"#22c55e":"#ef4444"
 
-document.getElementById("num").innerText="-"
-document.getElementById("color").innerText="-"
+let result=(last.result===last.actual)?"WIN":"LOSS"
+
+document.getElementById("signalresult").innerText=result
+document.getElementById("signalresult").style.color=
+result==="WIN"?"#22c55e":"#ef4444"
 
 document.getElementById("confidence").innerText="90%"
-
-/* RESULT */
-
-if(last.result === last.actual){
-document.getElementById("signalresult").innerText="WIN"
-document.getElementById("signalresult").style.color="#22c55e"
-}else{
-document.getElementById("signalresult").innerText="LOSS"
-document.getElementById("signalresult").style.color="#ef4444"
 }
-
-}
-
-/* PERIOD (fake next) */
-
-document.getElementById("period").innerText="AUTO"
 
 }catch(e){
 console.log("API ERROR")
 }
-
 }
 
-/* LOOP */
-
+/* AUTO REFRESH */
 setInterval(load,5000)
 load()
 
 /* TIMER */
-
 function getRealSeconds(){
 let now=new Date()
 return 30-(now.getSeconds()%30)
@@ -98,26 +153,7 @@ document.getElementById("timer").innerText=t
 document.getElementById("timerRing").style.setProperty("--p",percent)
 },1000)
 
-/* DOWNLOAD (from backend) */
-
-async function downloadHistory(){
-
-const res=await fetch("/api/stats")
-const data=await res.json()
-
-let csv="Period,Signal,Actual\n"
-
-data.history.forEach(r=>{
-csv+=`${r.period},${r.result},${r.actual}\n`
-})
-
-let blob=new Blob([csv],{type:"text/csv"})
-let url=URL.createObjectURL(blob)
-
-let a=document.createElement("a")
-a.href=url
-a.download="AI_PANEL_HISTORY.csv"
-a.click()
-}
-
 </script>
+
+</body>
+</html>
