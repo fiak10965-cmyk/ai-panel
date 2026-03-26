@@ -1,120 +1,137 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const axios = require("axios");
+const mongoose = require("mongoose");
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 10000;
 
-const PORT = process.env.PORT || 8080;
+/* ================= DATABASE ================= */
 
-// 🔥 Mongo Connect
 mongoose.connect(process.env.MONGO_URI)
-.then(()=> console.log("✅ MongoDB Connected"))
-.catch(err=> console.log("❌ Mongo Error:", err));
+.then(() => console.log("✅ MongoDB Connected"))
+.catch(err => console.log("❌ MongoDB Error:", err));
 
-// 🔥 Schema
-const StatsSchema = new mongoose.Schema({
-  total: { type: Number, default: 0 },
-  win: { type: Number, default: 0 },
-  loss: { type: Number, default: 0 },
-  winstreak: { type: Number, default: 0 },
-  lossstreak: { type: Number, default: 0 },
-  maxwin: { type: Number, default: 0 },
-  maxloss: { type: Number, default: 0 }
+const SignalSchema = new mongoose.Schema({
+  period: String,
+  result: String,
+  actual: String,
+  time: { type: Date, default: Date.now }
 });
 
-const Stats = mongoose.model("Stats", StatsSchema);
+const Signal = mongoose.model("Signal", SignalSchema);
 
-let currentSignal = null;
-let lastPeriod = null;
+/* ================= API FETCH ================= */
 
-// 🔥 INIT DB
-async function initDB() {
-  let stats = await Stats.findOne();
-  if (!stats) {
-    await Stats.create({});
-    console.log("📊 Initial Stats Created");
-  }
-}
-initDB();
-
-// 🔥 API fetch
-async function fetchGame() {
+async function getData() {
   try {
     const res = await axios.get(
       "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json",
       {
-        timeout: 5000,
-        headers: { "User-Agent": "Mozilla/5.0" }
+        headers: {
+          "User-Agent": "Mozilla/5.0",
+          "Accept": "*/*",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Origin": "https://draw.ar-lottery01.com",
+          "Referer": "https://draw.ar-lottery01.com/",
+        },
       }
     );
 
-    const list = res.data.data.list;
-    const latest = list[0];
-
-    let resultSize = latest.number >= 5 ? "BIG" : "SMALL";
-    let period = latest.issueNumber;
-
-    // 🔥 NEW PERIOD DETECT
-    if (lastPeriod !== period) {
-      let stats = await Stats.findOne();
-
-      if (currentSignal) {
-        stats.total++;
-
-        if (currentSignal === resultSize) {
-          stats.win++;
-          stats.winstreak++;
-          stats.lossstreak = 0;
-
-          if (stats.winstreak > stats.maxwin)
-            stats.maxwin = stats.winstreak;
-
-          console.log("✅ WIN");
-        } else {
-          stats.loss++;
-          stats.lossstreak++;
-          stats.winstreak = 0;
-
-          if (stats.lossstreak > stats.maxloss)
-            stats.maxloss = stats.lossstreak;
-
-          console.log("❌ LOSS");
-        }
-
-        await stats.save(); // 🔥 SAVE DB
-      }
-
-      // 🔥 AI SIGNAL (reverse trend)
-      let last10 = list.slice(0, 10).map(x => x.number);
-      let bigCount = last10.filter(n => n >= 5).length;
-
-      currentSignal = bigCount >= 5 ? "SMALL" : "BIG";
-
-      console.log("🎯 New Signal:", currentSignal);
-
-      lastPeriod = period;
-    }
+    return res.data.data.list;
 
   } catch (err) {
     console.log("❌ API ERROR:", err.message);
+    return [];
   }
 }
 
-// 🔥 LOOP (5 sec)
-setInterval(fetchGame, 5000);
+/* ================= LOGIC ================= */
 
-// 🔥 API: Stats
-app.get("/api/stats", async (req, res) => {
-  const stats = await Stats.findOne();
-  res.json(stats);
-});
+let lastPeriod = null;
 
-// 🔥 ROOT
+async function processSignal() {
+  const list = await getData();
+  if (!list.length) return;
+
+  const current = list[0];
+  const period = current.issueNumber;
+  const number = current.number;
+
+  const actual = number >= 5 ? "BIG" : "SMALL";
+
+  const numbers = list.slice(0, 10).map(x => x.number);
+  const big = numbers.filter(n => n >= 5).length;
+  const small = numbers.filter(n => n < 5).length;
+
+  const signal = big > small ? "SMALL" : "BIG";
+
+  if (lastPeriod !== period) {
+    lastPeriod = period;
+
+    await Signal.create({
+      period,
+      result: signal,
+      actual
+    });
+
+    console.log("✅ Saved:", period, signal, actual);
+  }
+}
+
+/* ================= ROUTES ================= */
+
 app.get("/", (req, res) => {
   res.send("🔥 AI PANEL RUNNING");
 });
 
+app.get("/api/stats", async (req, res) => {
+  const data = await Signal.find().sort({ time: -1 }).limit(50);
+
+  let total = data.length;
+  let win = 0;
+  let loss = 0;
+
+  let winStreak = 0;
+  let lossStreak = 0;
+  let maxWinStreak = 0;
+  let maxLossStreak = 0;
+
+  data.forEach(d => {
+    if (d.result === d.actual) {
+      win++;
+      winStreak++;
+      lossStreak = 0;
+    } else {
+      loss++;
+      lossStreak++;
+      winStreak = 0;
+    }
+
+    if (winStreak > maxWinStreak) maxWinStreak = winStreak;
+    if (lossStreak > maxLossStreak) maxLossStreak = lossStreak;
+  });
+
+  const accuracy = total ? ((win / total) * 100).toFixed(1) : 0;
+
+  res.json({
+    total,
+    win,
+    loss,
+    winStreak,
+    lossStreak,
+    maxWinStreak,
+    maxLossStreak,
+    accuracy,
+    history: data
+  });
+});
+
+/* ================= LOOP ================= */
+
+setInterval(processSignal, 5000);
+
+/* ================= START ================= */
+
 app.listen(PORT, () => {
-  console.log("🚀 Server running on port", PORT);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
