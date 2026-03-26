@@ -23,32 +23,65 @@ const SignalSchema = new mongoose.Schema({
 
 const Signal = mongoose.model("Signal", SignalSchema);
 
-/* ================= STATIC FILE ================= */
+/* ================= STATIC ================= */
 
 app.use(express.static(path.join(__dirname, "public")));
 
-/* ================= API FETCH SAFE ================= */
+/* ================= API FETCH (SUPER FIX) ================= */
 
 const API_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
 
 async function getData() {
+  // 🔹 1. Direct try
   try {
     const res = await axios.get(API_URL, {
-      headers: { "User-Agent": "Mozilla/5.0" },
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "*/*"
+      },
       timeout: 10000
     });
 
-    if (!res.data || !res.data.data || !res.data.data.list) {
-      console.log("❌ API BLOCKED");
-      return [];
+    if (res.data?.data?.list) {
+      console.log("✅ Direct API OK");
+      return res.data.data.list;
     }
 
-    return res.data.data.list;
-
-  } catch (err) {
-    console.log("❌ API ERROR:", err.message);
-    return [];
+  } catch (e) {
+    console.log("⚠️ Direct Blocked");
   }
+
+  // 🔹 2. Proxy try (AllOrigins)
+  try {
+    const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(API_URL);
+
+    const res = await axios.get(proxy, { timeout: 10000 });
+
+    if (res.data?.data?.list) {
+      console.log("✅ Proxy API OK");
+      return res.data.data.list;
+    }
+
+  } catch (e) {
+    console.log("⚠️ Proxy Failed");
+  }
+
+  // 🔹 3. Backup proxy (SECOND)
+  try {
+    const proxy2 = "https://corsproxy.io/?" + encodeURIComponent(API_URL);
+
+    const res = await axios.get(proxy2, { timeout: 10000 });
+
+    if (res.data?.data?.list) {
+      console.log("✅ Backup Proxy OK");
+      return res.data.data.list;
+    }
+
+  } catch (e) {
+    console.log("❌ All API Failed");
+  }
+
+  return [];
 }
 
 /* ================= LOGIC ================= */
@@ -58,7 +91,6 @@ let lastPeriod = null;
 async function processSignal() {
   try {
     const list = await getData();
-
     if (!list.length) return;
 
     const current = list[0];
@@ -82,11 +114,11 @@ async function processSignal() {
         actual
       });
 
-      console.log("✅ Saved:", period);
+      console.log("✅ Saved:", period, signal);
     }
 
   } catch (e) {
-    console.log("❌ PROCESS ERROR");
+    console.log("❌ PROCESS ERROR:", e.message);
   }
 }
 
@@ -134,7 +166,7 @@ app.get("/api/stats", async (req, res) => {
   });
 });
 
-/* ================= ROOT FIX ================= */
+/* ================= ROOT ================= */
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
@@ -142,7 +174,7 @@ app.get("*", (req, res) => {
 
 /* ================= LOOP ================= */
 
-setInterval(processSignal, 7000);
+setInterval(processSignal, 8000);
 
 /* ================= START ================= */
 
