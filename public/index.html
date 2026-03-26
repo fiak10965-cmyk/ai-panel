@@ -42,7 +42,7 @@ border-radius:25px;color:white;font-size:18px;margin-top:20px;
 <div class="top">
 <div>
 <div class="game">WinGo 30sec</div>
-<div class="period">Next Period :- <span id="period">-</span></div>
+<div class="period">Next Period :- <span id="period">LIVE</span></div>
 </div>
 
 <div style="display:flex;align-items:center;gap:10px">
@@ -78,147 +78,73 @@ border-radius:25px;color:white;font-size:18px;margin-top:20px;
 <h2>GAME HISTORY</h2>
 <table id="history"></table>
 
-<button class="downloadbtn" onclick="downloadHistory()">
-All Game history Download now
-</button>
-
 </div>
 
 <script>
 
-const API="https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json"
-
-let lastPeriod=null
-let lastSignal=null
-
-let totalSignal=0
-let win=0
-let loss=0
-let winStreak=0
-let lossStreak=0
-let maxWinStreak=0
-let maxLossStreak=0
+/* ✅ FIXED API */
+const API="/api/stats"
 
 async function load(){
-
 try{
 
 const res=await fetch(API)
 const data=await res.json()
-const list=data.data.list
 
-let latest=list[0]
-let period=latest.issueNumber
-let number=latest.number
+/* STATS */
+document.getElementById("totalsignal").innerText=data.total
+document.getElementById("win").innerText=data.win
+document.getElementById("loss").innerText=data.loss
+document.getElementById("winstreak").innerText=data.winStreak
+document.getElementById("lossstreak").innerText=data.lossStreak
+document.getElementById("maxwinstreak").innerText=data.maxWinStreak
+document.getElementById("maxlossstreak").innerText=data.maxLossStreak
+document.getElementById("accuracy").innerText=data.accuracy+"%"
 
-let size=number>=5?"BIG":"SMALL"
-let color=number%2==0?"RED":"GREEN"
-
-document.getElementById("period").innerText=parseInt(period)+1
-
-/* TABLE */
-
+/* HISTORY */
 let table=document.getElementById("history")
 table.innerHTML=`
 <tr>
 <th>Period</th>
-<th>Number</th>
-<th>Big/Small</th>
-<th>Color</th>
+<th>Signal</th>
+<th>Result</th>
 </tr>
 `
 
-list.slice(0,10).forEach(r=>{
-let s=r.number>=5?"BIG":"SMALL"
-let c=r.number%2==0?"RED":"GREEN"
-
+data.history.forEach(r=>{
 table.innerHTML+=`
 <tr>
-<td>${r.issueNumber}</td>
-<td>${r.number}</td>
-<td>${s}</td>
-<td>${c}</td>
+<td>${r.period}</td>
+<td>${r.result}</td>
+<td>${r.actual}</td>
 </tr>`
 })
 
-/* RESULT CHECK */
+/* LAST SIGNAL */
+if(data.history.length){
+let last=data.history[0]
 
-if(lastPeriod && lastPeriod !== period){
+document.getElementById("signal").innerText=last.result
+document.getElementById("signal").style.color=last.result==="BIG"?"#22c55e":"#ef4444"
 
-totalSignal++
+document.getElementById("signalresult").innerText=
+(last.result===last.actual)?"WIN":"LOSS"
 
-if(lastSignal === size){
+document.getElementById("signalresult").style.color=
+(last.result===last.actual)?"#22c55e":"#ef4444"
 
-win++
-winStreak++
-lossStreak=0
-
-if(winStreak>maxWinStreak) maxWinStreak=winStreak
-
-document.getElementById("signalresult").innerText="WIN"
-document.getElementById("signalresult").style.color="#22c55e"
-
-}else{
-
-loss++
-lossStreak++
-winStreak=0
-
-if(lossStreak>maxLossStreak) maxLossStreak=lossStreak
-
-document.getElementById("signalresult").innerText="LOSS"
-document.getElementById("signalresult").style.color="#ef4444"
+document.getElementById("confidence").innerText="90%"
 }
-}
-
-/* AI SIGNAL */
-
-let nums=list.slice(0,10).map(x=>x.number)
-let big=nums.filter(n=>n>=5).length
-
-let signal=big>=5?"SMALL":"BIG"
-lastSignal=signal
-
-document.getElementById("signal").innerText=signal
-document.getElementById("signal").style.color=signal==="BIG"?"#22c55e":"#ef4444"
-
-document.getElementById("num").innerText=number
-document.getElementById("color").innerText=color
-
-/* CONFIDENCE */
-
-let confidence=70+Math.floor(Math.random()*25)
-document.getElementById("confidence").innerText=confidence+"%"
-
-/* STATS */
-
-let total=win+loss
-let accuracy=total>0?((win/total)*100).toFixed(1):0
-
-document.getElementById("totalsignal").innerText=totalSignal
-document.getElementById("win").innerText=win
-document.getElementById("loss").innerText=loss
-document.getElementById("winstreak").innerText=winStreak
-document.getElementById("lossstreak").innerText=lossStreak
-document.getElementById("maxwinstreak").innerText=maxWinStreak
-document.getElementById("maxlossstreak").innerText=maxLossStreak
-document.getElementById("accuracy").innerText=accuracy+"%"
-
-lastPeriod=period
 
 }catch(e){
 console.log("API ERROR")
 }
-
 }
-
-/* SAFE LOOP */
 
 setInterval(load,5000)
 load()
 
 /* TIMER */
-
 function getRealSeconds(){
 let now=new Date()
 return 30-(now.getSeconds()%30)
@@ -231,31 +157,6 @@ let percent=(t/30)*100
 document.getElementById("timer").innerText=t
 document.getElementById("timerRing").style.setProperty("--p",percent)
 },1000)
-
-/* DOWNLOAD */
-
-async function downloadHistory(){
-let res=await fetch(API)
-let data=await res.json()
-let list=data.data.list
-
-let csv="Period,Number,BigSmall,Color\n"
-
-list.forEach(r=>{
-let s=r.number>=5?"BIG":"SMALL"
-let c=r.number%2==0?"RED":"GREEN"
-
-csv+=`${r.issueNumber},${r.number},${s},${c}\n`
-})
-
-let blob=new Blob([csv],{type:"text/csv"})
-let url=URL.createObjectURL(blob)
-
-let a=document.createElement("a")
-a.href=url
-a.download="WinGo_Game_History.csv"
-a.click()
-}
 
 </script>
 </body>
