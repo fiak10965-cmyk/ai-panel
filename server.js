@@ -1,6 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const mongoose = require("mongoose");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -20,14 +21,28 @@ const SignalSchema = new mongoose.Schema({
 
 const Signal = mongoose.model("Signal", SignalSchema);
 
-/* ================= API FETCH (FIXED) ================= */
+/* ================= STATIC ================= */
 
-const API = "https://api.allorigins.win/raw?url=https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
+app.use(express.static(path.join(__dirname, "public")));
+
+/* ================= API FETCH (PRO SAFE) ================= */
+
+const API_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
 
 async function getData() {
   try {
-    const res = await axios.get(API);
+    const res = await axios.get(API_URL, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      timeout: 10000
+    });
+
+    if (!res.data || !res.data.data || !res.data.data.list) {
+      console.log("❌ Invalid API response");
+      return [];
+    }
+
     return res.data.data.list;
+
   } catch (err) {
     console.log("❌ API ERROR:", err.message);
     return [];
@@ -37,41 +52,53 @@ async function getData() {
 /* ================= LOGIC ================= */
 
 let lastPeriod = null;
+let isRunning = false;
 
 async function processSignal() {
-  const list = await getData();
-  if (!list.length) return;
+  if (isRunning) return;
+  isRunning = true;
 
-  const current = list[0];
-  const period = current.issueNumber;
-  const number = current.number;
+  try {
+    const list = await getData();
 
-  const actual = number >= 5 ? "BIG" : "SMALL";
+    if (!list.length) {
+      console.log("⚠️ No data");
+      isRunning = false;
+      return;
+    }
 
-  const numbers = list.slice(0, 10).map(x => x.number);
-  const big = numbers.filter(n => n >= 5).length;
-  const small = numbers.filter(n => n < 5).length;
+    const current = list[0];
+    const period = current.issueNumber;
+    const number = current.number;
 
-  const signal = big > small ? "SMALL" : "BIG";
+    const actual = number >= 5 ? "BIG" : "SMALL";
 
-  if (lastPeriod !== period) {
-    lastPeriod = period;
+    const numbers = list.slice(0, 10).map(x => x.number);
+    const big = numbers.filter(n => n >= 5).length;
+    const small = numbers.filter(n => n < 5).length;
 
-    await Signal.create({
-      period,
-      result: signal,
-      actual
-    });
+    const signal = big > small ? "SMALL" : "BIG";
 
-    console.log("✅ Saved:", period, signal, actual);
+    if (lastPeriod !== period) {
+      lastPeriod = period;
+
+      await Signal.create({
+        period,
+        result: signal,
+        actual
+      });
+
+      console.log("✅ Saved:", period);
+    }
+
+  } catch (e) {
+    console.log("❌ Process error");
   }
+
+  isRunning = false;
 }
 
 /* ================= ROUTES ================= */
-
-app.get("/", (req, res) => {
-  res.send("🔥 AI PANEL RUNNING");
-});
 
 app.get("/api/stats", async (req, res) => {
   const data = await Signal.find().sort({ time: -1 }).limit(50);
@@ -117,10 +144,10 @@ app.get("/api/stats", async (req, res) => {
 
 /* ================= LOOP ================= */
 
-setInterval(processSignal, 5000);
+setInterval(processSignal, 7000);
 
 /* ================= START ================= */
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-});
+}); প
